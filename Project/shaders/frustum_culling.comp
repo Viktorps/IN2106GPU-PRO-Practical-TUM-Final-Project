@@ -1,0 +1,98 @@
+#version 460
+
+layout(set = 0, binding = 0) uniform CameraData{
+    mat4 view;
+    mat4 toWorld;
+    mat4 projection;
+}camera;
+
+layout(set = 0, binding = 1) readonly buffer ModelData{
+    mat4 at[];
+}modelMatrices;
+
+
+struct BoundingBox{
+    float minX, minY, minZ, maxX, maxY, maxZ;
+};
+layout(set = 0, binding = 2) readonly buffer BoundingBoxes{
+    BoundingBox at[];
+}boundingBoxes;
+
+
+struct DrawIndexedIndirectCommand {
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    int vertexOffset;
+    uint firstInstance;
+};
+layout(set = 0, binding = 3) buffer DrawCommands{
+    DrawIndexedIndirectCommand at[];
+}drawCommands;
+
+// To map to the bounding boxes
+layout(set = 0, binding = 4) readonly buffer MaterialID{
+    uint at[];
+}materialIDs;
+
+// To prevent out of bounds access
+layout(set = 0, binding = 5) uniform Bounds{
+    uint maxInstances;
+};
+
+// To provide feedback
+layout(set = 0, binding = 6) buffer Stats{
+    uint numDrawnInstances;
+};
+
+
+layout(local_size_x = 64) in;
+
+void main(){
+    uint id = gl_GlobalInvocationID.x;
+    if(id >= maxInstances) return;
+
+    // Extract bounding box
+    BoundingBox localBox = boundingBoxes.at[materialIDs.at[id]];
+    vec3 localMin = vec3(localBox.minX,localBox.minY,localBox.minZ);
+    vec3 localMax = vec3(localBox.maxX,localBox.maxY,localBox.maxZ);
+
+    // extract points
+    vec4 points[8] = vec4[](
+        vec4(localMin.x,localMin.y,localMin.z,1),
+        vec4(localMax.x,localMin.y,localMin.z,1),
+        vec4(localMin.x,localMax.y,localMin.z,1),
+        vec4(localMin.x,localMin.y,localMax.z,1),
+        vec4(localMax.x,localMax.y,localMin.z,1),
+        vec4(localMax.x,localMin.y,localMax.z,1),
+        vec4(localMin.x,localMax.y,localMax.z,1),
+        vec4(localMax.x,localMax.y,localMax.z,1)
+    );
+
+    // model view projection matrix
+    mat4 MVP = camera.projection * camera.view * modelMatrices.at[id];
+
+    // Find clip space min and max
+    vec3 pMin = vec3(2,2,2);
+    vec3 pMax = vec3(-2,-2,-2);
+    for(uint i = 0; i < points.length(); ++i){
+        vec4 p  = MVP * points[i];
+        p.w = max(p.w,0); 
+        p /= p.w; // Dividing by zero yield infinity (or nan)
+        pMin = min(p.xyz,pMin);
+        pMax = max(p.xyz,pMax);
+    }
+    // https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/projection-matrix-GPU-rendering-pipeline-clipping.html
+    bool isCulled =
+    (pMin.z > 1) || (pMin.x > +1) || (pMin.y > +1) || 
+    (pMax.z < 0) || (pMax.x < -1) || (pMax.y < -1);
+
+    // TODO: Corner/Edge Cases
+
+    // Set Instance count accordingly (bool to integer conversion)
+    drawCommands.at[id].instanceCount = uint(!isCulled);
+    if(!isCulled){
+         atomicAdd(numDrawnInstances,1);
+    }
+   
+}

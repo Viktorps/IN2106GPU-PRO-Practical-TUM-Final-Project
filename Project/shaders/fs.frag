@@ -26,8 +26,8 @@ layout(location = 2) out vec3 position;
 
 void main() {
     // Texture lookup and other fragment processing
-    if (fragData.textureID == 9 || fragData.textureID == 10) {
-        albedo = vec4(texture(colorTex[fragData.textureID], fragData.texCoords).rgb, 0.5);
+    if (fragData.textureID == 9) {
+        albedo = vec4(texture(colorTex[fragData.textureID], fragData.texCoords).rgb, 0.1);
     } else {
         albedo = vec4(texture(colorTex[fragData.textureID], fragData.texCoords).rgb, 1.0);
     }

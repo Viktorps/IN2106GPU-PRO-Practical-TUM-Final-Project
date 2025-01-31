@@ -22,8 +22,6 @@ layout(set = 1, binding = 1) readonly buffer MaterialID{
     uint at[];
 }materialIDs;
 
-
-
 layout (location = 0) out FragData{
     vec3 worldPosition;
     vec2 texCoords;
@@ -42,6 +40,4 @@ void main(){
     fragData.tangent = mat3(modelMatrix) * tangent;
     fragData.textureID = materialIDs.at[gl_InstanceIndex];
     gl_Position = camera.projection * camera.view * wPos;
-    
-
 }
