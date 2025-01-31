@@ -20,17 +20,24 @@ struct Vec3Hasher {
     }
 };
 
+struct MinedBlock{
+    glm::vec3 pos;
+    glm::vec3 orientation;
+    glm::vec3 velocity;
+    int type;
+    int lifetime;
+    bool tnt;
+};
+
+struct triggeredTNT{
+    glm::vec3 pos;
+    int currentWave;
+    int radius;
+    int delay;
+};
+
 class ChunkManager {
 public:
-
-    std::priority_queue<int, std::vector<int>, std::greater<int>> freeIDs; // Min-heap to track free IDs
-    int nextID = 0; // Tracks the next available ID if freeIDs is empty
-    int tempIDStart = INT_MAX;
-    std::unordered_map<int, int> activeFlows; // Map sourceID to the count of active flows
-    std::unordered_map<glm::vec3, std::pair<int, int>> generateWaterQueue; 
-    std::vector<int> removeWaterQueue;
-    std::unordered_map<int, std::vector<glm::vec3>> waterBlocksByID;
-    std::vector<std::pair<int, int>> checkWater; // Member of ChunkManager
 
     bool updateWaterForXZ(Chunk& chunk, int x, int z);
     glm::vec3 worldPosition(const Chunk& chunk, int localX, int localY, int localZ) const {
@@ -39,6 +46,7 @@ public:
         return chunkBasePosition + localPosition; // Combine to get world position
     }
 
+    void updateTNT();
     void handleWaterBlock(const glm::vec3& position, Voxel& block);
     int getLowestFreeID() {
         int id;
@@ -84,8 +92,6 @@ public:
     void removeWater();
 
     void simulateSand(Chunk& chunk, int x, int y, int z);
-    
-    int currentTick = 0; // Global tick counter for water simulation
 
     void incrementTick() {
         currentTick++;
@@ -94,41 +100,33 @@ public:
     void addChunk(ChunkKey key, Chunk chunk);
     void clear();
 
-    std::unordered_map<ChunkKey, Chunk, ChunkKeyHasher> chunks;
-    std::unordered_map<ChunkKey, Chunk, ChunkKeyHasher> savedChunks;
-    std::unordered_map<glm::ivec3, Voxel, Vec3Hasher> combinedChunk;
-    std::unordered_set<ChunkKey, ChunkKeyHasher> dirtyChunks; 
-
     void updateCombinedChunk(const glm::vec3& playerPosition, int radius);
     void updateVoxelVisibility(Voxel& voxel, Chunk& chunk, const glm::ivec3& localPos);
     void updateVoxelsAroundPlayer(const glm::vec3& playerPosition, int radius);
+    void updateWaterVoxels();
+
+    bool isPositionUnderwater(const glm::vec3& position) const;
 
     std::optional<glm::vec3> getNormal(
     const glm::vec3& playerPosition,
     const glm::vec3& viewDirection,
     const glm::vec3& targetBlockPos);
 
+    bool hasExposedFace(Chunk& chunk, const glm::ivec3& localPos);
+    void updateMinedBlocks(float deltaTime, const glm::vec3& playerPosition, std::vector<int>& minedBlocks);
     bool loadChunk(Chunk& chunk, int chunkX, int chunkZ);
     void saveChunk(const Chunk& chunk, int chunkX, int chunkZ);
-    bool isChunkInView(const Chunk& chunk, const glm::mat4& viewProjectionMatrix);
     void updateChunks(const glm::mat4& viewProjectionMatrix, const glm::vec3& playerPosition, int viewDistance);
     std::optional<glm::vec3> getPlacementPosition(const glm::vec3& targetBlockPos, const glm::vec3& playerPosition, const glm::vec3& viewDirection);
     std::vector<Chunk*> getVisibleChunks(const glm::vec3& playerPosition, int viewDistance, const glm::mat4& viewProjectionMatrix);
     // Replace a block at the given world position
     bool placeBlock(const glm::vec3& placementPosition, int newBlockType, const glm::vec3& playerPosition, const glm::vec3& playerSize);
 
-    std::vector<Chunk*> getLoadedChunks();
-
     std::optional<glm::vec3> getTargetBlock(const glm::vec3& playerPosition, const glm::vec3& viewDirection);
 
-    int countVisibleVoxels(const glm::vec3& playerPosition, int viewDistance) const;
-
     bool isVoxelVisibleToPlayer(const Chunk& chunk, int x, int y, int z) const ;
-
     void calculateVisibility(Chunk& chunk, const glm::vec3& playerPosition, int viewDistance);
   
-    std::pair<int, int> getCurrentHeightRange() const;
-
     void setUpdated(){
         updated = true;
     }
@@ -141,18 +139,35 @@ public:
         return false;
     }
 
-    // Mine (remove) a block at the given world position
     bool mineBlock(const glm::vec3& position);
 
     const Chunk* getChunkAt(const glm::vec3& position) const; // Const version
     Chunk* getChunkAt(const glm::vec3& position);             // Non-const version
 
     const Voxel* getBlockAt(const glm::vec3& position) const; // Const version
-    Voxel* getBlockAt(const glm::vec3& position);  
+    Voxel* getBlockAt(const glm::vec3& position);             // Non-const version
 
     const std::unordered_map<ChunkKey, Chunk, ChunkKeyHasher> getAllChunks() const;
+    std::vector<MinedBlock> getMinedBlocks() { return activeMinedBlocks; }
+
+    std::unordered_map<glm::ivec3, Voxel, Vec3Hasher> combinedChunk;
+    std::priority_queue<int, std::vector<int>, std::greater<int>> freeIDs; // Min-heap to track free IDs
+    int nextID = 0; // Tracks the next available ID if freeIDs is empty
+    int tempIDStart = INT_MAX;
+    std::unordered_map<int, int> activeFlows; // Map sourceID to the count of active flows
+    std::unordered_map<glm::vec3, std::pair<int, int>> generateWaterQueue; 
+    std::vector<int> removeWaterQueue;
+    std::unordered_map<int, std::vector<glm::vec3>> waterBlocksByID;
+    std::vector<std::pair<int, int>> checkWater;
+    std::unordered_map<int, triggeredTNT> activeTNT;
+    std::unordered_map<ChunkKey, Chunk, ChunkKeyHasher> chunks;
+    std::unordered_map<ChunkKey, Chunk, ChunkKeyHasher> savedChunks;
+    std::unordered_set<ChunkKey, ChunkKeyHasher> dirtyChunks; 
+    int currentTick = 0;
 
 private:
+
     bool updated;
+    std::vector<MinedBlock> activeMinedBlocks;
 
 };

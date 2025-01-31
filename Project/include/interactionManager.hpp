@@ -14,7 +14,7 @@ public:
     static void resolveCollisions(glm::vec3& position, ChunkManager& chunkManager);
     
 
-    static void handleMovement(ChunkManager& chunkManager,glm::vec3& blockWorldPos,  bool& flying, int& buildTimer, int& flyTimer, int& mineTimer,glm::vec3& playerPosition,
+    static void handleMovement(ChunkManager& chunkManager,glm::vec3& blockWorldPos,  bool& flying, bool& inWater, int& buildTimer, int& flyTimer, int& mineTimer,glm::vec3& playerPosition,
                                         glm::vec3& velocity, glm::vec3& forward,
                                         glm::vec2& playerView, float dt, tga::Interface& tgai, tga::Window window, int centerX, int centerY, int blockType, int& lookTimer);
 

@@ -9,6 +9,8 @@ struct Voxel {
     bool isSource = false;          // True if this voxel is a source block
     int sourceID = -1;           // ID of the source block that created this water
     int tickCounter = 0;
+    bool faceVisible[6];
+    bool updated = true;
 };
 
 // Helper for 2D chunk coordinate keys

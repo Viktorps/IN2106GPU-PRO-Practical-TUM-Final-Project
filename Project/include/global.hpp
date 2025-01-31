@@ -14,6 +14,41 @@
 #include <ApplicationServices/ApplicationServices.h>
 #include <vector>
 
+void handleOptions(tga::Window& window, tga::Interface& tgai, int& cullTimer, bool& enableCull, int& viewDistance, int& distanceTimer, auto& camData){
+    if (tgai.keyDown(window, tga::Key::P) && cullTimer <= 0) {
+        enableCull = !enableCull;
+        if(enableCull){
+            std::cout << "Cull is on.\n";
+        } else {
+            std::cout << "Cull is off.\n";
+        }
+        cullTimer = 50;
+    }
+    if(cullTimer > 0){
+        cullTimer--;
+    }
+    if (tgai.keyDown(window, tga::Key::Up) && viewDistance < 5 && distanceTimer <= 0) {
+        viewDistance++;
+        std::cout << "Current view distance is: " << viewDistance << " chunks.\n";
+        distanceTimer = 40;
+    }
+    if (tgai.keyDown(window, tga::Key::Down) && viewDistance > 1 && distanceTimer <= 0) {
+            viewDistance--;
+            std::cout << "Current view distance is: " << viewDistance << " chunks.\n";
+            distanceTimer = 40;
+    }
+    if(distanceTimer > 0){
+            distanceTimer--;
+    }
+
+    if (tgai.keyDown(window, tga::Key::O)) {
+            camData.fov = glm::clamp(camData.fov + 1.0f, 30.0f, 120.0f); // Clamp FOV between 30° and 120°
+        }
+        if (tgai.keyDown(window, tga::Key::L)) {
+            camData.fov = glm::clamp(camData.fov - 1.0f, 30.0f, 120.0f);
+        }
+}
+
 void createFinalTextureLayout(const std::string& topPath, const std::string& sidePath, const std::string& bottomPath, const std::string& outputPath) {
     int topWidth, topHeight, sideWidth, sideHeight, bottomWidth, bottomHeight, channels;
     unsigned char* topData = stbi_load(topPath.c_str(), &topWidth, &topHeight, &channels, 4);
@@ -90,9 +125,28 @@ tga::Texture leavesTexture;
 tga::Texture cobbleStoneTexture;
 tga::Texture sandTexture;
 tga::Texture waterTexture;
-tga::Texture waterFlowTexture;
+tga::Texture snowTexture;
+tga::Texture tntTexture;
+tga::Texture ironTexture;
+tga::Texture coalTexture;
+tga::Texture goldTexture;
+tga::Texture sunTexture;
+
+tga::Texture grassImage;
+tga::Texture stoneImage;
+tga::Texture bedrockImage;
+tga::Texture woodImage;
+tga::Texture diamondImage;
+tga::Texture leavesImage;
+tga::Texture cobbleStoneImage;
+tga::Texture sandImage;
+tga::Texture waterImage;
+tga::Texture snowImage;
+tga::Texture tntImage;
 
 std::vector<tga::Texture> allTextures;
+std::vector<tga::Texture> allImages;
+
 // Initialize the grass texture
 void initializeTextures(tga::Interface& tgai) {
     greenTexture = tga::loadTexture("models/Grass_Block_TEX.png",
@@ -141,13 +195,96 @@ void initializeTextures(tga::Interface& tgai) {
                                     tga::SamplerMode::nearest,
                                     tgai);
 
-    waterFlowTexture = tga::loadTexture("models/water_flow.png",
+   snowTexture = tga::loadTexture("models/snow.png",
                                     tga::Format::r8g8b8a8_srgb,
                                     tga::SamplerMode::nearest,
                                     tgai);
     
+    tntTexture = tga::loadTexture("models/tnt.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
 
-    allTextures = {greenTexture, stoneTexture, bedrockTexture, diamondTexture, woodTexture, leavesTexture, cobbleStoneTexture, sandTexture, waterTexture, waterFlowTexture};
+    ironTexture = tga::loadTexture("models/iron.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+    
+    coalTexture = tga::loadTexture("models/coal.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+
+    goldTexture = tga::loadTexture("models/gold.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+    sunTexture = tga::loadTexture("models/sun.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+
+    allTextures = {greenTexture, stoneTexture, bedrockTexture, diamondTexture, woodTexture, leavesTexture, cobbleStoneTexture, sandTexture, waterTexture, snowTexture, tntTexture, ironTexture, coalTexture, goldTexture,sunTexture};
+
+}
+
+void initializeImages(tga::Interface& tgai) {
+    grassImage = tga::loadTexture("images/grass.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::linear,
+                                    tgai);
+
+    stoneImage = tga::loadTexture("images/stone.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+
+    bedrockImage = tga::loadTexture("images/bedrock.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+    
+    woodImage = tga::loadTexture("images/logs.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+
+    diamondImage = tga::loadTexture("images/diamond.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+    
+    leavesImage = tga::loadTexture("images/leaves.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+    
+    cobbleStoneImage = tga::loadTexture("images/cobblestone.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+
+    sandImage = tga::loadTexture("images/sand.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+                                    
+    waterImage = tga::loadTexture("images/water.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+
+   snowImage = tga::loadTexture("images/snow.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+    
+    tntImage = tga::loadTexture("images/tnt.png",
+                                    tga::Format::r8g8b8a8_srgb,
+                                    tga::SamplerMode::nearest,
+                                    tgai);
+
+    allImages = {grassImage, stoneImage, woodImage, leavesImage, cobbleStoneImage, sandImage, waterImage, snowImage, tntImage};
 
 }
 
@@ -263,6 +400,7 @@ void saveWorldToBinary(const ChunkManager& chunkManager, const glm::vec3& player
                         outFile.write(reinterpret_cast<const char*>(&voxel.type), sizeof(voxel.type));
                         outFile.write(reinterpret_cast<const char*>(&voxel.isSource), sizeof(voxel.isSource));
                         outFile.write(reinterpret_cast<const char*>(&voxel.sourceID), sizeof(voxel.sourceID));
+                        outFile.write(reinterpret_cast<const char*>(&voxel.visible), sizeof(voxel.visible));
                         legitBlocks++;
                     }
                 }
@@ -388,6 +526,7 @@ bool loadWorldFromBinary(ChunkManager& chunkManager, const std::string& fileName
         chunk.isGenerated = true;
         chunk.isDirty = true;
 
+        
         // Initialize all voxels to type 0 and visible false
         for (int x = 0; x < CHUNK_SIZE; ++x) {
             for (int y = 0; y < CHUNK_SIZE_Y; ++y) {
@@ -404,6 +543,7 @@ bool loadWorldFromBinary(ChunkManager& chunkManager, const std::string& fileName
             int type;
             bool isSource;
             int sourceID;
+            bool visible;
 
             // Read voxel position and type
             inFile.read(reinterpret_cast<char*>(&x), sizeof(x));
@@ -412,11 +552,12 @@ bool loadWorldFromBinary(ChunkManager& chunkManager, const std::string& fileName
             inFile.read(reinterpret_cast<char*>(&type), sizeof(type));
             inFile.read(reinterpret_cast<char*>(&isSource), sizeof(isSource));
             inFile.read(reinterpret_cast<char*>(&sourceID), sizeof(sourceID));
+            inFile.read(reinterpret_cast<char*>(&visible), sizeof(visible));
 
             // Validate coordinates
             if (x >= 0 && x < CHUNK_SIZE && y >= 0 && y < CHUNK_SIZE_Y && z >= 0 && z < CHUNK_SIZE) {
                 chunk.voxels[x][y][z].type = type;
-                chunk.voxels[x][y][z].visible = (type != 0);
+                chunk.voxels[x][y][z].visible = visible;
                 chunk.voxels[x][y][z].isSource = isSource;
                 chunk.voxels[x][y][z].sourceID = sourceID;
             }
@@ -436,12 +577,13 @@ bool loadWorldFromBinary(ChunkManager& chunkManager, const std::string& fileName
 void selectBlockType(tga::Interface& tgai, tga::Window& window, int& blockType){
     if (tgai.keyDown(window, tga::Key::n1)) {blockType = 1;} //grass
     if (tgai.keyDown(window, tga::Key::n2)) {blockType = 2;} //stone
-    if (tgai.keyDown(window, tga::Key::n3)) {blockType = 4;} //diamond
-    if (tgai.keyDown(window, tga::Key::n4)) {blockType = 5;} //wood
-    if (tgai.keyDown(window, tga::Key::n5)) {blockType = 6;} //leaves
-    if (tgai.keyDown(window, tga::Key::n6)) {blockType = 7;} //cobblestone
-    if (tgai.keyDown(window, tga::Key::n7)) {blockType = 8;} //sand
-    if (tgai.keyDown(window, tga::Key::n8)) {blockType = 9;} //Water stationary
+    if (tgai.keyDown(window, tga::Key::n3)) {blockType = 5;} //diamond
+    if (tgai.keyDown(window, tga::Key::n4)) {blockType = 6;} //wood
+    if (tgai.keyDown(window, tga::Key::n5)) {blockType = 7;} //leaves
+    if (tgai.keyDown(window, tga::Key::n6)) {blockType = 8;} //cobblestone
+    if (tgai.keyDown(window, tga::Key::n7)) {blockType = 9;} //sand
+    if (tgai.keyDown(window, tga::Key::n8)) {blockType = 10;} //Water stationary
+    if (tgai.keyDown(window, tga::Key::n9)) {blockType = 11;} //snow
 }
 
 void moveCursorToCenter(int centerX, int centerY) {
@@ -452,17 +594,7 @@ void moveCursorToCenter(int centerX, int centerY) {
     };
     CGWarpMouseCursorPosition(center);
 }
-// Lock and hide the cursor
-void lockAndHideCursor() {
-    //CGAssociateMouseAndMouseCursorPosition(false); // Lock cursor
-    //CGDisplayHideCursor(kCGDirectMainDisplay);     // Hide cursor
-}
 
-// Unlock and show the cursor
-void unlockAndShowCursor() {
-    //CGAssociateMouseAndMouseCursorPosition(true);  // Unlock cursor
-    //CGDisplayShowCursor(kCGDirectMainDisplay);     // Show cursor
-}
 
 struct Batch {
     struct Element {
@@ -470,13 +602,13 @@ struct Batch {
         tga::Buffer buffer;
         size_t capacity{0};
         uint32_t count{0};
-
+        
         void destroy(tga::Interface& tgai) {
             if (staging) tgai.free(staging);
             if (buffer) tgai.free(buffer);
         }
     };
-
+    bool updated = false;
     Element vertex;
     Element index;
     Element modelMatrices;
@@ -516,44 +648,28 @@ struct AABB {
     glm::vec4 max; //using vec4 for alignment reasons
 };
 
+
 Batch generateVoxelBatch(tga::Obj cubeModel, const std::vector<Chunk*>& visibleChunks, tga::Interface& tgai, const glm::vec3& playerPosition, int viewDistance) {
     Batch batch;
-    
-    batch.textures = allTextures;
-    // Initialize staging buffers with capacity based on the expected number of voxels
-    size_t maxVoxels = visibleChunks.size() * CHUNK_SIZE * CHUNK_SIZE_Y * CHUNK_SIZE;
 
-    // Calculate max vertices and indices based on the cube model
-    size_t maxVertices = visibleChunks.size() * CHUNK_SIZE * CHUNK_SIZE_Y * CHUNK_SIZE * cubeModel.vertexBuffer.size();
-    size_t maxIndices = visibleChunks.size() * CHUNK_SIZE * CHUNK_SIZE_Y * CHUNK_SIZE * cubeModel.indexBuffer.size();
+    batch.textures = allTextures;
+
+    size_t maxVoxels = visibleChunks.size() * CHUNK_SIZE * CHUNK_SIZE_Y * CHUNK_SIZE;
 
     // Initialize staging buffers
     auto initStaging = [&](Batch::Element& element, size_t elementSize, size_t maxSize) {
-        element.capacity = maxSize; // Set capacity
+        element.capacity = maxSize;
         element.staging = tgai.createStagingBuffer({maxSize * elementSize});
     };
 
-    // Adjust vertex and index buffer sizes
-    initStaging(batch.vertex, sizeof(tga::Vertex), maxVertices);
-    initStaging(batch.index, sizeof(uint32_t), maxIndices);
-    initStaging(batch.modelMatrices, sizeof(glm::mat4), maxVoxels); // Unchanged
-    initStaging(batch.drawCommands, sizeof(tga::DrawIndexedIndirectCommand), maxVoxels); // Unchanged
-    initStaging(batch.materialIDs, sizeof(uint32_t), maxVoxels); // Unchanged
-    initStaging(batch.boundingBoxes, sizeof(AABB), maxVoxels); // Unchanged
-    std::cout << "Generating batch for " << visibleChunks.size() << " visible chunks.\n";
-
-    // Fill staging buffers with data
-    for (auto* chunk : visibleChunks) {
-        for (int x = 0; x < CHUNK_SIZE; ++x) {
-            for (int y = 0; y < CHUNK_SIZE_Y; ++y) {
-                for (int z = 0; z < CHUNK_SIZE; ++z) {
-                    const Voxel& voxel = chunk->voxels[x][y][z];
-                    if (!voxel.visible) continue;
-
-                    glm::vec3 worldPosition = chunk->position + glm::vec3(x, y, z);
-
-                    // Append geometry from the predefined object
-                    auto appendData = [&]<typename T>(Batch::Element& elem, std::span<T> span) {
+    initStaging(batch.vertex, sizeof(tga::Vertex), maxVoxels * cubeModel.vertexBuffer.size()); 
+    initStaging(batch.index, sizeof(uint32_t), maxVoxels * cubeModel.indexBuffer.size());   
+    initStaging(batch.modelMatrices, sizeof(glm::mat4), maxVoxels);                         
+    initStaging(batch.drawCommands, sizeof(tga::DrawIndexedIndirectCommand), maxVoxels);     
+    initStaging(batch.materialIDs, sizeof(uint32_t), maxVoxels);                           
+    initStaging(batch.boundingBoxes, sizeof(AABB), maxVoxels);   
+    
+    auto appendData = [&]<typename T>(Batch::Element& elem, std::span<T> span) {
                         if (elem.count + span.size() > elem.capacity) {
                             throw std::runtime_error("Buffer overflow in appendData");
                         }
@@ -566,17 +682,26 @@ Batch generateVoxelBatch(tga::Obj cubeModel, const std::vector<Chunk*>& visibleC
                         auto writePos = static_cast<T*>(mappedMemory) + elem.count;
                         std::memcpy(writePos, span.data(), span.size_bytes());
                         elem.count += span.size();
-                    };
+                    };                              // Add one for the sun
 
-                    // Append vertex and index data
+    // Process visible chunks
+    for (auto* chunk : visibleChunks) {
+        for (int x = 0; x < CHUNK_SIZE; ++x) {
+            for (int y = 0; y < CHUNK_SIZE_Y; ++y) {
+                for (int z = 0; z < CHUNK_SIZE; ++z) {
+                    const Voxel& voxel = chunk->voxels[x][y][z];
+                    if (!voxel.visible) continue;
+
+                    glm::vec3 worldPosition = chunk->position + glm::vec3(x, y, z);
+
+                    
+
                     appendData(batch.vertex, std::span<tga::Vertex>{cubeModel.vertexBuffer});
                     appendData(batch.index, std::span<uint32_t>{cubeModel.indexBuffer});
 
-                    // Append model matrix for this voxel
                     glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), worldPosition);
                     appendData(batch.modelMatrices, std::span<glm::mat4>{&modelMatrix, 1});
 
-                    // Append draw command for this voxel
                     tga::DrawIndexedIndirectCommand drawCmd = {
                         .indexCount = static_cast<uint32_t>(cubeModel.indexBuffer.size()),
                         .instanceCount = 1,
@@ -586,12 +711,10 @@ Batch generateVoxelBatch(tga::Obj cubeModel, const std::vector<Chunk*>& visibleC
                     };
                     appendData(batch.drawCommands, std::span<tga::DrawIndexedIndirectCommand>{&drawCmd, 1});
 
-                    // Append material ID for this voxel
-                    uint32_t materialID = voxel.type - 1; // Use voxel type (1 = grass, 2 = stone, 3 = bedrock)
+                    uint32_t materialID = voxel.type - 1;
                     appendData(batch.materialIDs, std::span<uint32_t>{&materialID, 1});
 
-                    // Append bounding box for this voxel
-                    AABB boundingBox = {glm::vec4(worldPosition,0), glm::vec4(worldPosition,0) + glm::vec4(1.0f)};
+                    AABB boundingBox = {glm::vec4(worldPosition, 0), glm::vec4(worldPosition, 0) + glm::vec4(1.0f)};
                     appendData(batch.boundingBoxes, std::span<AABB>{&boundingBox, 1});
                 }
             }
@@ -613,6 +736,146 @@ Batch generateVoxelBatch(tga::Obj cubeModel, const std::vector<Chunk*>& visibleC
     return batch;
 }
 
+Batch generateVoxelBatchMined(tga::Obj cubeModel, const std::vector<MinedBlock>& activeMinedBlocks, tga::Interface& tgai, const glm::vec3& playerPosition, int viewDistance, glm::vec3 sunPos, float sunRadius) {
+    Batch batch;
+    
+    batch.textures = allTextures;
+    
+    // Initialize staging buffers with capacity based on the expected number of voxels
+    size_t maxVoxels = activeMinedBlocks.size() + 1;
+
+    // Calculate max vertices and indices based on the cube model
+    size_t maxVertices =  maxVoxels * cubeModel.vertexBuffer.size();
+    size_t maxIndices = maxVoxels * cubeModel.indexBuffer.size();
+
+    // Initialize staging buffers
+    auto initStaging = [&](Batch::Element& element, size_t elementSize, size_t maxSize) {
+        element.capacity = maxSize; // Set capacity
+        element.staging = tgai.createStagingBuffer({maxSize * elementSize});
+    };
+
+    // Adjust vertex and index buffer sizes
+    initStaging(batch.vertex, sizeof(tga::Vertex), maxVertices);
+    initStaging(batch.index, sizeof(uint32_t), maxIndices);
+    initStaging(batch.modelMatrices, sizeof(glm::mat4), maxVoxels); // Unchanged
+    initStaging(batch.drawCommands, sizeof(tga::DrawIndexedIndirectCommand), maxVoxels); // Unchanged
+    initStaging(batch.materialIDs, sizeof(uint32_t), maxVoxels); // Unchanged
+    initStaging(batch.boundingBoxes, sizeof(AABB), maxVoxels); // Unchanged
+
+    // Append geometry from the predefined object
+        auto appendData = [&]<typename T>(Batch::Element& elem, std::span<T> span) {
+            if (elem.count + span.size() > elem.capacity) {
+                throw std::runtime_error("Buffer overflow in appendData");
+            }
+
+            void* mappedMemory = tgai.getMapping(elem.staging);
+            if (!mappedMemory) {
+                throw std::runtime_error("Failed to map staging buffer");
+            }
+
+            auto writePos = static_cast<T*>(mappedMemory) + elem.count;
+            std::memcpy(writePos, span.data(), span.size_bytes());
+            elem.count += span.size();
+        };
+
+    for (auto& block : activeMinedBlocks) {
+        glm::vec3 worldPosition = block.pos;
+        int scale = 1;
+        if(block.tnt){
+            scale = 2;
+        }
+
+        // Append vertex and index data
+        appendData(batch.vertex, std::span<tga::Vertex>{cubeModel.vertexBuffer});
+        appendData(batch.index, std::span<uint32_t>{cubeModel.indexBuffer});
+
+        // Compute the model matrix with position and orientation
+        glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), worldPosition);
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(scale)); 
+
+        // Apply rotation based on the block's orientation
+        modelMatrix *= glm::rotate(glm::mat4(1.0f), block.orientation.x, glm::vec3(1, 0, 0));
+        modelMatrix *= glm::rotate(glm::mat4(1.0f), block.orientation.y, glm::vec3(0, 1, 0));
+        modelMatrix *= glm::rotate(glm::mat4(1.0f), block.orientation.z, glm::vec3(0, 0, 1));
+
+        // Append model matrix for this voxel
+        appendData(batch.modelMatrices, std::span<glm::mat4>{&modelMatrix, 1});
+
+        // Append draw command for this voxel
+        tga::DrawIndexedIndirectCommand drawCmd = {
+            .indexCount = static_cast<uint32_t>(cubeModel.indexBuffer.size()),
+            .instanceCount = 1,
+            .firstIndex = static_cast<uint32_t>(batch.index.count),
+            .vertexOffset = static_cast<int32_t>(batch.vertex.count),
+            .firstInstance = batch.modelMatrices.count
+        };
+        appendData(batch.drawCommands, std::span<tga::DrawIndexedIndirectCommand>{&drawCmd, 1});
+
+        // Append material ID for this voxel
+        uint32_t materialID = block.type - 1; // Use voxel type (1 = grass, 2 = stone, 3 = bedrock)
+        appendData(batch.materialIDs, std::span<uint32_t>{&materialID, 1});
+
+        // Append bounding box for this voxel
+        AABB boundingBox = {glm::vec4(worldPosition, 0), glm::vec4(worldPosition, 0) + glm::vec4(1.0f)};
+        appendData(batch.boundingBoxes, std::span<AABB>{&boundingBox, 1});
+    }
+
+    appendData(batch.vertex, std::span<tga::Vertex>{cubeModel.vertexBuffer});
+    appendData(batch.index, std::span<uint32_t>{cubeModel.indexBuffer});
+
+    // Compute the direction vector from the sun to the origin
+    glm::vec3 direction = glm::normalize(-sunPos);
+
+    // Define the fixed "up" vector
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    // Compute the right vector (cross product of up and direction)
+    glm::vec3 right = glm::normalize(glm::cross(up, direction));
+
+    // Recompute the corrected "up" vector to ensure orthogonality
+    glm::vec3 correctedUp = glm::cross(direction, right);
+
+    // Construct the rotation matrix manually
+    glm::mat4 rotationMatrix = glm::mat4(
+        glm::vec4(right, 0.0f),
+        glm::vec4(correctedUp, 0.0f),
+        glm::vec4(-direction, 0.0f),
+        glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
+    );
+
+    // Create the sun model matrix
+    glm::mat4 sunModelMatrix = glm::translate(glm::mat4(1.0f), sunPos);
+    sunModelMatrix *= rotationMatrix; // Apply the rotation
+    sunModelMatrix = glm::scale(sunModelMatrix, glm::vec3(sunRadius)); // Apply scaling
 
 
+    appendData(batch.modelMatrices, std::span<glm::mat4>{&sunModelMatrix, 1});
 
+    tga::DrawIndexedIndirectCommand sunDrawCmd = {
+        .indexCount = static_cast<uint32_t>(cubeModel.indexBuffer.size()),
+        .instanceCount = 1,
+        .firstIndex = batch.index.count,
+        .vertexOffset = static_cast<int32_t>(batch.vertex.count),
+        .firstInstance = batch.modelMatrices.count - 1
+    };
+    appendData(batch.drawCommands, std::span<tga::DrawIndexedIndirectCommand>{&sunDrawCmd, 1});
+
+    uint32_t sunMaterialID = 14; // Unique texture ID for the sun
+    appendData(batch.materialIDs, std::span<uint32_t>{&sunMaterialID, 1});
+
+    AABB sunBoundingBox = {glm::vec4(sunPos - glm::vec3(sunRadius), 0), glm::vec4(sunPos + glm::vec3(sunRadius), 0)};
+    appendData(batch.boundingBoxes, std::span<AABB>{&sunBoundingBox, 1});
+
+    // Finalize staging buffers
+    auto initBuffer = [&](Batch::Element& element, tga::BufferUsage usage, size_t elementSize) {
+        element.buffer = tgai.createBuffer({usage, elementSize * element.count, element.staging});
+    };
+
+    initBuffer(batch.vertex, tga::BufferUsage::vertex, sizeof(tga::Vertex));
+    initBuffer(batch.index, tga::BufferUsage::index, sizeof(uint32_t));
+    initBuffer(batch.drawCommands, tga::BufferUsage::indirect | tga::BufferUsage::storage, sizeof(tga::DrawIndexedIndirectCommand));
+    initBuffer(batch.modelMatrices, tga::BufferUsage::storage, sizeof(glm::mat4));
+    initBuffer(batch.materialIDs, tga::BufferUsage::storage, sizeof(uint32_t));
+    initBuffer(batch.boundingBoxes, tga::BufferUsage::storage, sizeof(AABB));
+    return batch;
+}
