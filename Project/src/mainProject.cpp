@@ -110,7 +110,6 @@ int main() {
     auto geometryVS = tga::loadShader("shaders/vs.spv", tga::ShaderType::vertex, tgai);
     auto geometryFS = tga::loadShader("shaders/fs.spv", tga::ShaderType::fragment, tgai);
 
-    // Since every batch has their own pass, we need one pass to clear the targets and provide a template for the input
     // set
     auto geometryInitPass = tgai.createRenderPass(
         tga::RenderPassInfo{geometryVS, geometryFS, std::vector<tga::Texture>{albedoTex, normalTex, positionTex}}
@@ -136,7 +135,7 @@ int main() {
                  tga::SetLayout{tga::BindingType::sampler, tga::BindingType::sampler, tga::BindingType::sampler}
                 }));
                  
-    // 3rd Render Pass renders to window. Since it's also a fullscreen pass, the same vertex shader from before is used
+    // 3rd Render Pass renders to window.
     auto postProcessingFS = tga::loadShader("shaders/post_frag.spv", tga::ShaderType::fragment, tgai);
 
     auto postProcessingPass = tgai.createRenderPass(
@@ -175,13 +174,13 @@ int main() {
     auto blockTypeBuffer = tgai.createBuffer({
         tga::BufferUsage::uniform,
         blockTypeSize,
-        blockTypeStaging  // Populate with initial value
+        blockTypeStaging
     });
     tgai.free(blockTypeStaging);
 
     auto blockTypeInputSet = tgai.createInputSet({
         postProcessingPass, 
-        {tga::Binding{blockTypeBuffer, 0}}, // Bind uniform buffer
+        {tga::Binding{blockTypeBuffer, 0}},
         1 });
 
     auto [waterEffectData, waterEffectStaging, waterEffectSize] = stagingBufferOfType<WaterEffect>(tgai);
