@@ -12,7 +12,7 @@ void InteractionManager::resolveCollisions(glm::vec3& playerPosition, ChunkManag
         testPosition.y = y;
         auto it = chunkManager.combinedChunk.find(testPosition);
         if (it != chunkManager.combinedChunk.end() && 
-            it->second.type != 0 && it->second.type != 9 && it->second.type != 10) {
+            it->second.type != 0 && it->second.type != 9) {
             groundY = y;
             break;
         }
@@ -57,9 +57,9 @@ void InteractionManager::getLook(tga::Interface& tgai, tga::Window window, float
 
     if(currentMousePos.second < centerY -centerY || currentMousePos.second > centerY + centerY/2 
     || currentMousePos.first < centerX -centerX || currentMousePos.first > centerX + centerX/2){
-        center(centerX, centerY); // Reset cursor position
-        lastMousePos = tgai.mousePosition(window);    // Immediately update lastMousePos
-        cursorJustReset = true;               // Mark that the cursor was reset
+        //center(centerX, centerY); // Reset cursor position
+        //lastMousePos = tgai.mousePosition(window);    // Immediately update lastMousePos
+        //cursorJustReset = true;               // Mark that the cursor was reset
         lookTimer = 0;                        // Reset the timer
     } else {
         lastMousePos = currentMousePos;       // Update lastMousePos for normal movement
@@ -98,10 +98,10 @@ glm::vec3 getMovement(tga::Interface& tgai, tga::Window window, glm::vec2 player
 }
 
 void mineOrPlaceBlocks(ChunkManager& chunkManager, int blockType, tga::Interface& tgai, tga::Window& window, int& buildTimer, int& mineTimer, glm::vec3& blockWorldPos, glm::vec3& playerPosition, const glm::vec3& forwardView){
-    if(mineTimer < 40){
+    if(mineTimer < 10){
         mineTimer++;
     }
-    if (tgai.keyDown(window, tga::Key::MouseLeft) && mineTimer == 40) {
+    if (tgai.keyDown(window, tga::Key::MouseLeft) && mineTimer == 10) {
             if(chunkManager.mineBlock(blockWorldPos)){
                 //std::cout << "Block at: ( " << blockWorldPos.x << ", " << blockWorldPos.y << ", " << blockWorldPos.z << ") was removed\n";
                 mineTimer = 0;
@@ -110,10 +110,10 @@ void mineOrPlaceBlocks(ChunkManager& chunkManager, int blockType, tga::Interface
         }
     }
     
-    if(buildTimer < 40){
+    if(buildTimer < 20){
         buildTimer++;
     }
-    if (tgai.keyDown(window, tga::Key::MouseRight) && buildTimer == 40) {
+    if (tgai.keyDown(window, tga::Key::MouseRight) && buildTimer == 20) {
         //std::cout << "Sending target block: ( " << glm::to_string(blockWorldPos) << ")\n";
         auto result = chunkManager.getPlacementPosition( playerPosition, forwardView, blockWorldPos);
         auto& block = *result;
@@ -125,13 +125,10 @@ void mineOrPlaceBlocks(ChunkManager& chunkManager, int blockType, tga::Interface
     }
 }
 
-void InteractionManager::handleMovement(ChunkManager& chunkManager, glm::vec3& blockWorldPos, bool& flying, int& buildTimer, int& flyTimer,int& mineTimer, glm::vec3& playerPosition,
+void InteractionManager::handleMovement(ChunkManager& chunkManager, glm::vec3& blockWorldPos, bool& flying, bool& inWater, int& buildTimer, int& flyTimer,int& mineTimer, glm::vec3& playerPosition,
                                         glm::vec3& velocity, glm::vec3& forward,
                                         glm::vec2& playerView, float dt, tga::Interface& tgai, tga::Window window, int centerX, int centerY, int blockType, int& lookTimer) {
     float moveSpeed = 4.0f * dt;
-    if (tgai.keyDown(window, tga::Key::Shift_Left)) {
-        moveSpeed *= 2.0f; // Sprinting
-    }
     glm::vec3 oldPos = playerPosition;
     if(flyTimer > 0){
         flyTimer--;
@@ -151,6 +148,9 @@ void InteractionManager::handleMovement(ChunkManager& chunkManager, glm::vec3& b
     }
 
     if(flying){
+        if (tgai.keyDown(window, tga::Key::Shift_Left)) {
+            moveSpeed *= 3.0f; // Sprinting
+        }
         getLook(tgai, window, playerView.x, playerView.y, centerX, centerY, lookTimer);
         glm::vec3 direction = getMovement(tgai, window, playerView, forward);
         if (tgai.keyDown(window, tga::Key::Space)) playerPosition.y += dt * moveSpeed * 70;
@@ -158,13 +158,8 @@ void InteractionManager::handleMovement(ChunkManager& chunkManager, glm::vec3& b
         playerPosition += direction * moveSpeed;
     } 
     if(!flying){
-
-        bool inWater = false;
-        glm::ivec3 playerBlockPos = glm::floor(playerPosition);
-        auto waterCheck = chunkManager.combinedChunk.find(playerBlockPos);
-        if (waterCheck != chunkManager.combinedChunk.end() && 
-            (waterCheck->second.type == 9 || waterCheck->second.type == 10)) {
-            inWater = true;
+        if (tgai.keyDown(window, tga::Key::Shift_Left)) {
+            moveSpeed *= 1.4f; // Sprinting
         }
 
     if(inWater){
@@ -174,7 +169,7 @@ void InteractionManager::handleMovement(ChunkManager& chunkManager, glm::vec3& b
         if (tgai.keyDown(window, tga::Key::Space)) {
             velocity.y = 3.0f; // Swim upwards
         } else if (velocity.y > -2.0f) {
-            velocity.y -= 1.0f * dt; // Gentle downward motion
+            velocity.y -= 4.0f * dt; // Gentle downward motion
         }
         getLook(tgai, window, playerView.x, playerView.y, centerX, centerY, lookTimer);
         glm::vec3 direction = getMovement(tgai, window, playerView, forward);
@@ -246,7 +241,7 @@ void InteractionManager::handleMovement(ChunkManager& chunkManager, glm::vec3& b
 
         // Jump input
         if (tgai.keyDown(window, tga::Key::Space) && velocity.y == 0.0f) {
-            velocity.y = 8.0f; // Jump strength
+            velocity.y = 8.35f; // Jump strength
         }
 
         // Apply gravity
@@ -296,7 +291,7 @@ bool InteractionManager::isPositionColliding(const glm::vec3& position, const Ch
 
                 auto it = chunkManager.combinedChunk.find(testPosition);
                 if (it != chunkManager.combinedChunk.end()) {
-                    if (it->second.type != 0 && it->second.type != 9 && it->second.type != 10) {
+                    if (it->second.type != 0 && it->second.type != 9) {
                         return true; // Collision detected (solid block, not water)
                     }
                 }
